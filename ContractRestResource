@@ -1,0 +1,56 @@
+@RestResource(urlMapping='/contract/*')
+global with sharing class ContractRestResource {
+
+    
+  
+    @HttpGet // récupérer 
+    global static Contract doGet() {
+        RestRequest req = RestContext.request;
+        RestResponse res = RestContext.response;
+        String contractId = req.requestURI.substring(req.requestURI.lastIndexOf('/')+1);
+        Contract result = [SELECT AccountId,ContractTerm,Id,StartDate FROM Contract];
+        return result;
+    }
+  
+  @HttpPost //afficher ou créer 
+    global static String doPost(String AccountId, integer ContractTerm, date StartDate) {
+        Contract contract = new contract();
+        contract.AccountId = AccountId;
+        contract.ContractTerm = ContractTerm;
+        contract.StartDate = StartDate;
+        insert contract;
+        return contract.Id +'Created';
+    }
+    
+     @HttpPatch //coller ou arranger 
+   global static String doPatch() {
+        RestRequest request = RestContext.request;
+        System.debug('request>>'+request);
+        String contractId = request.requestURI.substring(request.requestURI.lastIndexOf('/')+1);
+        System.debug('contactId>>'+contractId);
+       
+        Contract contract = [SELECT Id FROM Contract WHERE Id = :contractId];
+       
+       System.debug('contract==>'+contract);
+        Map<String, Object> params = (Map<String, Object>)JSON.deserializeUntyped(request.requestbody.tostring());
+       
+        System.debug('params==>>'+params);
+        for(String fieldName : params.keySet()) {
+       
+            contract.put(fieldName, params.get(fieldName));
+        }
+        update contract;
+        return contract.Id + 'Updated';
+    }    
+
+    
+    @HttpDelete
+    global static void doDelete() {
+        RestRequest req = RestContext.request;
+        RestResponse res = RestContext.response;
+        String contractId = req.requestURI.substring(req.requestURI.lastIndexOf('/')+1);
+        Contract contract = [SELECT Id FROM contract WHERE  Id = :contractId];
+        delete contract;
+            
+    }
+}
