@@ -1,0 +1,61 @@
+@RestResource(urlMapping='/contact/*')
+global with sharing class MyRestResource {
+
+    
+  
+    @HttpGet // récupérer 
+    global static Contact doGet() {
+        RestRequest req = RestContext.request;
+        RestResponse res = RestContext.response;
+        String contactId = req.requestURI.substring(req.requestURI.lastIndexOf('/')+1);
+        Contact result = [SELECT Id, FirstName, LastName, Phone
+                          From contact 
+                          WHERE Id = :contactId];
+        return result;
+    }
+  
+  @HttpPost //afficher ou créer 
+    global static String doPost(String FirstName,
+        String Email, String lastName) {
+        Contact contact = new contact();
+        contact.FirstName = FirstName;
+        contact.email = email;
+        contact.LastName = LastName;
+        insert contact;
+        return contact.Id;
+    }
+    
+     @HttpPatch //coller ou arranger 
+   global static String doPatch() {
+        RestRequest request = RestContext.request;
+        System.debug('request>>'+request);
+        String contactId = request.requestURI.substring(request.requestURI.lastIndexOf('/')+1);
+        System.debug('contactId>>'+contactId);
+       
+        Contact con = [SELECT Id FROM Contact WHERE Id = :contactId];
+       
+       System.debug('con==>'+con);
+        Map<String, Object> params = (Map<String, Object>)JSON.deserializeUntyped(request.requestbody.tostring());
+       
+        System.debug('params==>>'+params);
+        for(String fieldName : params.keySet()) {
+       
+            con.put(fieldName, params.get(fieldName));
+        }
+        update con;
+        return con.Id + 'Updated';
+    }    
+
+    
+    @HttpDelete
+    global static string doDelete() {
+        RestRequest req = RestContext.request;
+        RestResponse res = RestContext.response;
+        String contactId = req.requestURI.substring(req.requestURI.lastIndexOf('/')+1);
+        Contact contact = [SELECT Id, Contact_Stage__c FROM contact WHERE Contact_Stage__c = 'engaged' AND Id = :contactId];
+        contact.Contact_Stage__c = 'engaged';
+        update contact;
+        return contact.Id + 'Not engaged';
+            
+    }
+}
